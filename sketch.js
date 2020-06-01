@@ -8,9 +8,16 @@
  *
  * WebGL이 작동하는 방식에 대해 내가 이해한 대로 정리해 봤는데
  * ./img/pipeline.jpg를 참고할 것.
+ *
+ * WebGL 회전 참고한 코드)
+ * http://jsfiddle.net/9sqvp52u/
  */
 
-let cubeRotation = 0.0;
+let drag = false;
+let pmouseX;
+let pmouseY;
+let dx = 0;
+let dy = 0;
 
 window.onload = main;
 
@@ -23,24 +30,29 @@ function main() {
     return;
   }
 
+  canvas.addEventListener('mousedown', mousedown);
+  canvas.addEventListener('mousemove', mousemove);
+  canvas.addEventListener('mouseup', mouseup);
+  canvas.addEventListener('mouseout', mouseup);
+
   /**
    * Our vertex shader below receives vertex position values
    * from an attribute we define called 'aVertexPosition'.
    * That position is then multiplied by 4x4 matrix we provide
    * called 'uProjectionMatrix' and 'uModelViewMatrix';
    * 'gl_Position' is set to the result.
+   * GLSL 그냥 따라 치지 말고 어떻게 쓰는지 공부할 것!!!!
    */
   const vertexShaderSource = `
   attribute vec4 aVertexPosition;
   attribute vec4 aVertexColor;
 
-  uniform mat4 uModelViewMatrix;
-  uniform mat4 uProjectionMatrix;
+  uniform mat4 uMatrix;
 
   varying lowp vec4 vColor;
 
   void main() {
-    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+    gl_Position = uMatrix * aVertexPosition;
     vColor = aVertexColor;
   }
   `;
@@ -72,22 +84,30 @@ function main() {
       vertexColor: gl.getAttribLocation(shaderProgram, 'aVertexColor'),
     },
     uniformLocations: {
-      projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
-      modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+      matrix: gl.getUniformLocation(shaderProgram, 'uMatrix'),
     },
   };
 
   const buffers = initializeBuffers(gl);
 
-  let then = 0;
+  const fieldOfView = 45 * Math.PI / 180; // in radians
+  const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+  const zNear = 0.1;
+  const zFar = 100.0;
+  const projectionMatrix = glMatrix.mat4.create();
+  const modelViewMatrix = glMatrix.mat4.create();
 
-  function render(now) {
-    now *= 0.001; // convert to seconds
-    const deltaTime = now - then;
-    then = now;
+  // 이것들이 하는 역할 정확히 알아볼 것
+  const eye = glMatrix.vec3.fromValues(0, 0, 5);
+  const target = glMatrix.vec3.fromValues(0, 0, 0);
+  const up = glMatrix.vec3.fromValues(0, 1, 0);
 
-    drawScene(gl, programInfo, buffers, deltaTime);
+  glMatrix.mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
+  glMatrix.mat4.lookAt(modelViewMatrix, eye, target, up);
+  glMatrix.mat4.multiply(projectionMatrix, projectionMatrix, modelViewMatrix);
 
+  function render() {
+    drawScene(gl, programInfo, buffers, projectionMatrix);
     requestAnimationFrame(render); // to call the function 'render' on each frame
   }
   requestAnimationFrame(render);
@@ -265,47 +285,31 @@ function initializeBuffers(gl) {
   };
 }
 
-function drawScene(gl, programInfo, buffers, deltaTime) {
+function drawScene(gl, programInfo, buffers, projectionMatrix) {
   // 이상하게 튜토리얼에 쓰여 있는 것처럼 바로 mat4를 부르면 안 불러와짐...
   // 아하 버전이 올라가면서 그렇게 바뀌었나 봄 https://stackoverflow.com/questions/15931119/how-do-i-include-gl-matrix
   // https://webglfundamentals.org/webgl/lessons/webgl-2d-matrices.html
-  const mat4 = glMatrix.mat4;
+  if (!drag) {
+    dx *= 0.95;
+    dy *= 0.95;
+  }
 
+  // gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clearDepth(1.0);
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  const fieldOfView = 45 * Math.PI / 180; // in radians
-  const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-  const zNear = 0.1;
-  const zFar = 100.0;
-  const projectionMatrix = mat4.create();
+  const quaternion = glMatrix.quat.create();
+  const rotation = glMatrix.mat4.create();
 
-  mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
+  const degX = dx * 180 / Math.PI;
+  const degY = dy * 180 / Math.PI;
 
-  const modelViewMatrix = mat4.create();
-
-  mat4.translate(
-    modelViewMatrix,
-    modelViewMatrix,
-    [-0.0, 0.0, -6.0]
-  );
-
-  mat4.rotate(
-    modelViewMatrix, // destination matrix
-    modelViewMatrix, // matrix to rotate
-    cubeRotation, // amount to rotate in radians
-    [0, 0, 1] // axis to rotate around. [x, y, z]
-  );
-
-  mat4.rotate(
-    modelViewMatrix,
-    modelViewMatrix,
-    cubeRotation * .7,
-    [0, 1, 0]
-  );
+  glMatrix.quat.fromEuler(quaternion, degY, degX, 0); // 왜 X랑 Y를 반대로 써야 하지?!
+  glMatrix.mat4.fromQuat(rotation, quaternion);
+  glMatrix.mat4.multiply(projectionMatrix, projectionMatrix, rotation);
 
   { // numComponent나 offset 같은 변수를 여러 번 선언할 일이 있어서 이걸 쓰는가보다
     const numCompoments = 3; // pull out 3 values per iteration
@@ -350,14 +354,9 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
   gl.useProgram(programInfo.program);
 
   gl.uniformMatrix4fv(
-    programInfo.uniformLocations.projectionMatrix,
+    programInfo.uniformLocations.matrix,
     false,
     projectionMatrix
-  );
-  gl.uniformMatrix4fv(
-    programInfo.uniformLocations.modelViewMatrix,
-    false,
-    modelViewMatrix
   );
 
   {
@@ -366,6 +365,23 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
     const offset = 0;
     gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
   }
+}
 
-  cubeRotation += deltaTime;
+function mousedown(e) {
+  drag = true;
+  pmouseX = e.pageX;
+  pmouseY = e.pageY;
+}
+
+function mousemove(e) {
+  if (drag) {
+    dx = (e.pageX - pmouseX) * 2 * Math.PI / e.target.width;
+    dy = (e.pageY - pmouseY) * 2 * Math.PI / e.target.height;
+    pmouseX = e.pageX;
+    pmouseY = e.pageY;
+  }
+}
+
+function mouseup() {
+  drag = false;
 }
