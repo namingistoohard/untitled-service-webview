@@ -35,6 +35,11 @@ function main() {
   canvas.addEventListener('mouseup', mouseup);
   canvas.addEventListener('mouseout', mouseup);
 
+  canvas.addEventListener('touchstart', mousedown);
+  canvas.addEventListener('touchmove', mousemove);
+  canvas.addEventListener('touchend', mouseup);
+  canvas.addEventListener('touchcancel', mouseup);
+
   /**
    * Our vertex shader below receives vertex position values
    * from an attribute we define called 'aVertexPosition'.
@@ -369,16 +374,29 @@ function drawScene(gl, programInfo, buffers, projectionMatrix) {
 
 function mousedown(e) {
   drag = true;
-  pmouseX = e.pageX;
-  pmouseY = e.pageY;
+  if (e.type === 'touchstart') {
+    pmouseX = e.touches[0].pageX;
+    pmouseY = e.touches[0].pageY;
+  } else {
+    pmouseX = e.pageX;
+    pmouseY = e.pageY;
+  }
 }
 
 function mousemove(e) {
   if (drag) {
-    dx = (e.pageX - pmouseX) * 2 * Math.PI / e.target.width;
-    dy = (e.pageY - pmouseY) * 2 * Math.PI / e.target.height;
-    pmouseX = e.pageX;
-    pmouseY = e.pageY;
+    let pageX, pageY;
+    if (e.type === 'touchmove') {
+      pageX = e.touches[0].pageX;
+      pageY = e.touches[0].pageY;
+    } else {
+      pageX = e.pageX;
+      pageY = e.pageY;
+    }
+    dx = (pageX - pmouseX) * 2 * Math.PI / e.target.width;
+    dy = (pageY - pmouseY) * 2 * Math.PI / e.target.height;
+    pmouseX = pageX;
+    pmouseY = pageY;
   }
 }
 
