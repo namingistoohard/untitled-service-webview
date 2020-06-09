@@ -317,7 +317,7 @@ function drawScene(gl, programInfo, buffers, projectionMatrix) {
   glMatrix.mat4.multiply(projectionMatrix, projectionMatrix, rotation);
 
   { // numComponent나 offset 같은 변수를 여러 번 선언할 일이 있어서 이걸 쓰는가보다
-    const numCompoments = 3; // pull out 3 values per iteration
+    const numComponents = 3; // pull out 3 values per iteration
     const type = gl.FLOAT;
     const normalize = false;
     const stride = 0;
@@ -326,7 +326,7 @@ function drawScene(gl, programInfo, buffers, projectionMatrix) {
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
     gl.vertexAttribPointer(
       programInfo.attribLocations.vertexPosition,
-      numCompoments,
+      numComponents,
       type,
       normalize,
       stride,
@@ -336,7 +336,7 @@ function drawScene(gl, programInfo, buffers, projectionMatrix) {
   }
 
   {
-    const numCompoments = 4;
+    const numComponents = 4;
     const type = gl.FLOAT;
     const normalize = false;
     const stride = 0;
@@ -345,7 +345,7 @@ function drawScene(gl, programInfo, buffers, projectionMatrix) {
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
     gl.vertexAttribPointer(
       programInfo.attribLocations.vertexColor,
-      numCompoments,
+      numComponents,
       type,
       normalize,
       stride,
