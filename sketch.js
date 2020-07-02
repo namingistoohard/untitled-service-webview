@@ -13,6 +13,8 @@
  * http://jsfiddle.net/9sqvp52u/
  */
 
+import vertexShaderSource from './assets/colorcube.vert';
+import fragmentShaderSource from './assets/colorcube.frag';
 import { mat4, vec3, quat } from './lib/gl-matrix-min';
 
 let drag = false;
@@ -41,37 +43,6 @@ function main() {
   canvas.addEventListener('touchmove', mousemove);
   canvas.addEventListener('touchend', mouseup);
   canvas.addEventListener('touchcancel', mouseup);
-
-  /**
-   * Our vertex shader below receives vertex position values
-   * from an attribute we define called 'aVertexPosition'.
-   * That position is then multiplied by 4x4 matrix we provide
-   * called 'uProjectionMatrix' and 'uModelViewMatrix';
-   * 'gl_Position' is set to the result.
-   * GLSL 그냥 따라 치지 말고 어떻게 쓰는지 공부할 것!!!!
-   */
-  const vertexShaderSource = `
-  attribute vec4 aVertexPosition;
-  attribute vec4 aVertexColor;
-
-  uniform mat4 uMatrix;
-
-  varying lowp vec4 vColor;
-
-  void main() {
-    gl_Position = uMatrix * aVertexPosition;
-    vColor = aVertexColor;
-  }
-  `;
-
-  // fetch the value from 'vColor' varying
-  const fragmentShaderSource = `
-  varying lowp vec4 vColor;
-
-  void main() {
-    gl_FragColor = vColor;
-  }
-  `;
 
   const shaderProgram = initializeShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
 
