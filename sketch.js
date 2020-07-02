@@ -13,6 +13,8 @@
  * http://jsfiddle.net/9sqvp52u/
  */
 
+import { mat4, vec3, quat } from './lib/gl-matrix-min';
+
 let drag = false;
 let pmouseX;
 let pmouseY;
@@ -99,17 +101,17 @@ function main() {
   const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
   const zNear = 0.1;
   const zFar = 100.0;
-  const projectionMatrix = glMatrix.mat4.create();
-  const modelViewMatrix = glMatrix.mat4.create();
+  const projectionMatrix = mat4.create();
+  const modelViewMatrix = mat4.create();
 
   // 이것들이 하는 역할 정확히 알아볼 것
-  const eye = glMatrix.vec3.fromValues(0, 0, 5);
-  const target = glMatrix.vec3.fromValues(0, 0, 0);
-  const up = glMatrix.vec3.fromValues(0, 1, 0);
+  const eye = vec3.fromValues(0, 0, 5);
+  const target = vec3.fromValues(0, 0, 0);
+  const up = vec3.fromValues(0, 1, 0);
 
-  glMatrix.mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
-  glMatrix.mat4.lookAt(modelViewMatrix, eye, target, up);
-  glMatrix.mat4.multiply(projectionMatrix, projectionMatrix, modelViewMatrix);
+  mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
+  mat4.lookAt(modelViewMatrix, eye, target, up);
+  mat4.multiply(projectionMatrix, projectionMatrix, modelViewMatrix);
 
   function render() {
     drawScene(gl, programInfo, buffers, projectionMatrix);
@@ -306,15 +308,15 @@ function drawScene(gl, programInfo, buffers, projectionMatrix) {
   gl.depthFunc(gl.LEQUAL);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  const quaternion = glMatrix.quat.create();
-  const rotation = glMatrix.mat4.create();
+  const quaternion = quat.create();
+  const rotation = mat4.create();
 
   const degX = dx * 180 / Math.PI;
   const degY = dy * 180 / Math.PI;
 
-  glMatrix.quat.fromEuler(quaternion, degY, degX, 0); // 왜 X랑 Y를 반대로 써야 하지?!
-  glMatrix.mat4.fromQuat(rotation, quaternion);
-  glMatrix.mat4.multiply(projectionMatrix, projectionMatrix, rotation);
+  quat.fromEuler(quaternion, degY, degX, 0); // 왜 X랑 Y를 반대로 써야 하지?!
+  mat4.fromQuat(rotation, quaternion);
+  mat4.multiply(projectionMatrix, projectionMatrix, rotation);
 
   { // numComponent나 offset 같은 변수를 여러 번 선언할 일이 있어서 이걸 쓰는가보다
     const numComponents = 3; // pull out 3 values per iteration
