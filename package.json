@@ -1,0 +1,12 @@
+{
+  "name": "untitled-service-webview",
+  "version": "1.0.0",
+  "main": "sketch.js",
+  "repository": "https://github.com/namingistoohard/untitled-service-webview.git",
+  "author": "leegakyeong <alaska7132@naver.com>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "parcel index.html",
+    "build": "parcel build index.html"
+  }
+}
