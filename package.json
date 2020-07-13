@@ -5,11 +5,15 @@
   "repository": "https://github.com/namingistoohard/untitled-service-webview.git",
   "author": "leegakyeong <alaska7132@naver.com>",
   "license": "MIT",
+  "homepage": "https://namingistoohard.github.io/untitled-service-webview",
   "scripts": {
     "dev": "parcel index.html",
-    "build": "parcel build index.html"
+    "build": "parcel build index.html",
+    "predeploy": "yarn run build",
+    "deploy": "gh-pages -d dist"
   },
   "devDependencies": {
+    "gh-pages": "^3.1.0",
     "glslify-bundle": "^5.1.1",
     "glslify-deps": "^1.3.1"
   }
